@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb bg-light p-3 rounded-3 shadow-sm">
+                <li class="breadcrumb-item"><a href="{{ url_for('students_list') }}"
+                        class="text-decoration-none">Students</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Edit Student</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Edit Student</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label fw-bold">Full Name</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ student.name }}"
+                                required>
+                        </div>
+                        <div class="col-md-6 mt-3 mt-md-0">
+                            <label for="reg_id" class="form-label fw-bold">Registration ID</label>
+                            <input type="text" class="form-control" id="reg_id" name="reg_id"
+                                value="{{ student.reg_id }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="parent_name" class="form-label fw-bold">Parent's Name</label>
+                            <input type="text" class="form-control" id="parent_name" name="parent_name"
+                                value="{{ student.parent_name }}" required>
+                        </div>
+                        <div class="col-md-6 mt-3 mt-md-0">
+                            <label for="parent_mobile" class="form-label fw-bold">Parent's Mobile Number</label>
+                            <input type="text" class="form-control" id="parent_mobile" name="parent_mobile"
+                                value="{{ student.parent_mobile if student.parent_mobile else '' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="mobile" class="form-label fw-bold">Student's Mobile Number</label>
+                            <input type="text" class="form-control" id="mobile" name="mobile"
+                                value="{{ student.mobile }}" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="noc_form" class="form-label fw-bold">Update NOC Form</label>
+                        <input class="form-control" type="file" id="noc_form" name="noc_form"
+                            accept=".pdf,.png,.jpg,.jpeg">
+                        {% if student.noc_form %}
+                        <div class="form-text text-success"><i class="bi bi-check-circle"></i> A file is already
+                            uploaded. Uploading a new one will replace it.</div>
+                        {% else %}
+                        <div class="form-text text-warning"><i class="bi bi-info-circle"></i> No NOC file currently
+                            uploaded.</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-end border-top pt-3">
+                        <a href="{{ url_for('students_list') }}" class="btn btn-secondary me-2">Cancel</a>
+                        <button type="submit" class="btn btn-warning px-4"><i class="bi bi-arrow-repeat me-1"></i>
+                            Update Student</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

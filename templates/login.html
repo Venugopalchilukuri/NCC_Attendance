@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block login_content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card mt-5 shadow">
+            <div class="card-header bg-dark text-white text-center">
+                <h4><i class="bi bi-shield-lock me-2"></i>Admin Panel Login</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

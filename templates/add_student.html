@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb bg-light p-3 rounded-3 shadow-sm">
+                <li class="breadcrumb-item"><a href="{{ url_for('students_list') }}"
+                        class="text-decoration-none">Students</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Add Student</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-person-plus me-2"></i>Add New Student</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label fw-bold">Full Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required
+                                placeholder="Enter student's full name">
+                        </div>
+                        <div class="col-md-6 mt-3 mt-md-0">
+                            <label for="reg_id" class="form-label fw-bold">Registration ID</label>
+                            <input type="text" class="form-control" id="reg_id" name="reg_id" required
+                                placeholder="Unique Registration ID">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="parent_name" class="form-label fw-bold">Parent's Name</label>
+                            <input type="text" class="form-control" id="parent_name" name="parent_name" required
+                                placeholder="Enter parent's name">
+                        </div>
+                        <div class="col-md-6 mt-3 mt-md-0">
+                            <label for="parent_mobile" class="form-label fw-bold">Parent's Mobile Number</label>
+                            <input type="text" class="form-control" id="parent_mobile" name="parent_mobile" required
+                                placeholder="Enter parent's 10-digit mobile number">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="mobile" class="form-label fw-bold">Student's Mobile Number</label>
+                            <input type="text" class="form-control" id="mobile" name="mobile" required
+                                placeholder="Enter student's 10-digit mobile number">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="noc_form" class="form-label fw-bold">Upload NOC Form</label>
+                        <input class="form-control" type="file" id="noc_form" name="noc_form"
+                            accept=".pdf,.png,.jpg,.jpeg">
+                        <div class="form-text">Accepted formats: PDF, PNG, JPG (Optional).</div>
+                    </div>
+
+                    <div class="d-flex justify-content-end border-top pt-3">
+                        <a href="{{ url_for('students_list') }}" class="btn btn-secondary me-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-1"></i> Save
+                            Student</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

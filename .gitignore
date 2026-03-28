@@ -1,0 +1,14 @@
+.vercel
+venv/
+__pycache__/
+*.pyc
+.env
+error.log
+lint.json
+lint.txt
+lint2.json
+lint_json.txt
+lint_json2.txt
+*.sqlite3
+.vscode/
+.idea/

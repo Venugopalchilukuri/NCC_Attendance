@@ -1,0 +1,97 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h3"><i class="bi bi-graph-up text-primary me-2"></i>Attendance Reports</h2>
+    <a href="{{ url_for('export_csv', start_date=start_date, end_date=end_date) }}" class="btn btn-success">
+        <i class="bi bi-file-earmark-excel me-1"></i> Download CSV
+    </a>
+</div>
+
+<div class="card shadow-sm mb-4 border-0">
+    <div class="card-body bg-light rounded">
+        <form method="GET" action="{{ url_for('reports') }}" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="start_date" class="form-label fw-bold">Start Date</label>
+                <input type="date" class="form-control shadow-sm" id="start_date" name="start_date"
+                    value="{{ start_date or '' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="end_date" class="form-label fw-bold">End Date</label>
+                <input type="date" class="form-control shadow-sm" id="end_date" name="end_date"
+                    value="{{ end_date or '' }}">
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100 shadow-sm"><i class="bi bi-funnel-fill me-1"></i>
+                    Filter Date Range</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center shadow-sm border-0 bg-info bg-gradient text-white h-100">
+            <div class="card-body">
+                <h6 class="card-title text-uppercase">Total Days in Range</h6>
+                <h1 class="display-4 fw-bold mb-0">{{ total_days }}</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col" class="ps-4">Reg ID</th>
+                        <th scope="col">Name</th>
+                        <th scope="col" class="text-center">Days Present</th>
+                        <th scope="col">Percentage</th>
+                        <th scope="col">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in report_data %}
+                    <tr>
+                        <td class="ps-4 fw-bold align-middle">{{ item.student.reg_id }}</td>
+                        <td class="align-middle">{{ item.student.name }}</td>
+                        <td class="text-center align-middle h5 mb-0">
+                            <span class="badge bg-secondary">{{ item.present_count }} / {{ total_days }}</span>
+                        </td>
+                        <td class="align-middle">
+                            <div class="d-flex align-items-center">
+                                <span
+                                    class="me-2 fw-bold text-{% if 75 > item.percentage %}danger{% else %}success{% endif %}">
+                                    {{ item.percentage }}%
+                                </span>
+                                <div class="progress flex-grow-1" style="height: 8px;">
+                                    <div class="progress-bar bg-{% if 75 > item.percentage %}danger{% else %}success{% endif %}"
+                                        role="progressbar" style="width: {{ item.percentage }}%"
+                                        aria-valuenow="{{ item.percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="align-middle">
+                            {% if 75 > item.percentage %} <span class="badge bg-danger rounded-pill px-3 py-2"><i
+                                    class="bi bi-exclamation-triangle-fill me-1"></i> Below 75%</span>
+                            {% else %}
+                            <span class="badge bg-success rounded-pill px-3 py-2"><i
+                                    class="bi bi-shield-check me-1"></i> Good</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No attendance data found for this range.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
