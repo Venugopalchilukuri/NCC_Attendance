@@ -1,0 +1,256 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('camps_list') }}">Camps</a></li>
+        <li class="breadcrumb-item active">New Camp</li>
+    </ol>
+</nav>
+
+<div class="card border-0 shadow-sm mx-auto" style="max-width:960px;">
+
+    <!-- Green Header -->
+    <div class="card-header text-white fw-semibold fs-5 d-flex align-items-center gap-2"
+         style="background-color:#2e7d32; border-radius:6px 6px 0 0;">
+        <i class="bi bi-plus-circle fs-5"></i> Create New Camp
+    </div>
+
+    <div class="card-body p-4">
+        <form method="POST" enctype="multipart/form-data" id="campForm" novalidate>
+
+            <!-- ── Basic Details ──────────────────────────────── -->
+            <p class="fw-semibold text-muted mb-1" style="font-size:0.95rem;">Basic Details</p>
+            <hr class="mt-0 mb-3">
+            <div class="row g-3 mb-2">
+                <div class="col-md-4">
+                    <label for="camp_name" class="form-label">Camp Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="camp_name" name="name"
+                           placeholder="E.g., Annual Training Camp" required>
+                    <div class="invalid-feedback">Camp name is required.</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date">
+                </div>
+                <div class="col-md-4">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date">
+                </div>
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-8">
+                    <label for="location" class="form-label">Location <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="location" name="location"
+                           placeholder="Enter camp location (e.g., Bengaluru, Karnataka)" required>
+                    <div class="invalid-feedback">Location is required.</div>
+                </div>
+            </div>
+
+            <!-- ── Cadet Details ──────────────────────────────── -->
+            <p class="fw-semibold text-muted mb-1" style="font-size:0.95rem;">Cadet Details</p>
+            <hr class="mt-0 mb-3">
+            <div class="row g-3 mb-2">
+                <div class="col-md-4">
+                    <label for="total_cadets" class="form-label">Total Cadets</label>
+                    <input type="number" class="form-control" id="total_cadets" name="total_cadets"
+                           min="0" placeholder="" autocomplete="off">
+                    <div class="form-text text-muted" style="font-size:0.78rem;">
+                        Enter total cadets, then specify SDs and SWs below.
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="num_sds" class="form-label">Number of SDs</label>
+                    <input type="number" class="form-control" id="num_sds" name="num_sds"
+                           min="0" value="0">
+                </div>
+                <div class="col-md-4">
+                    <label for="num_sws" class="form-label">Number of SWs</label>
+                    <input type="number" class="form-control" id="num_sws" name="num_sws"
+                           min="0" value="0">
+                </div>
+            </div>
+
+            <!-- Cadet validation messages -->
+            <div id="cadetError" class="alert alert-danger py-2 px-3 mt-2 d-none" style="font-size:0.85rem;">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                <span id="cadetErrorMsg"></span>
+            </div>
+            <div id="cadetSummary" class="alert alert-info py-2 px-3 mt-2 d-none" style="font-size:0.84rem;">
+                <i class="bi bi-people-fill me-1"></i>
+                <span id="cadetSummaryText"></span>
+            </div>
+
+            <!-- ── SDs Name Fields (dynamically generated) ────── -->
+            <div id="sdsSection" class="d-none mt-4">
+                <p class="fw-semibold mb-1" style="font-size:0.9rem; color:#1565c0;">
+                    <i class="bi bi-person-badge me-1"></i> SD Names
+                </p>
+                <hr class="mt-0 mb-3">
+                <div id="sdsFields" class="row g-2"></div>
+            </div>
+
+            <!-- ── SWs Name Fields (dynamically generated) ────── -->
+            <div id="swsSection" class="d-none mt-4">
+                <p class="fw-semibold mb-1" style="font-size:0.9rem; color:#6a1b9a;">
+                    <i class="bi bi-person-dress me-1"></i> SW Names
+                </p>
+                <hr class="mt-0 mb-3">
+                <div id="swsFields" class="row g-2"></div>
+            </div>
+
+            <div class="mb-4"></div>
+
+            <!-- ── Other Details ──────────────────────────────── -->
+            <p class="fw-semibold text-muted mb-1" style="font-size:0.95rem;">Other Details</p>
+            <hr class="mt-0 mb-3">
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description"
+                          rows="3" placeholder="Additional details about the camp..."></textarea>
+            </div>
+            <div class="mb-4">
+                <label for="photos" class="form-label">Camp Photos</label>
+                <input type="file" class="form-control" id="photos" name="photos"
+                       multiple accept="image/*">
+                <div class="form-text">
+                    You can select <strong>multiple</strong> images by holding <kbd>CTRL</kbd> (or <kbd>CMD</kbd>).
+                </div>
+                <div id="photoPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+            </div>
+
+            <!-- ── Action Buttons ─────────────────────────────── -->
+            <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                <a href="{{ url_for('camps_list') }}" class="btn btn-secondary px-4">Cancel</a>
+                <button type="submit" class="btn px-4 text-white fw-semibold"
+                        style="background-color:#2e7d32;">
+                    <i class="bi bi-floppy me-1"></i> Create Camp
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+// ── Cadet count helpers ────────────────────────────────────────────
+const totalEl = document.getElementById('total_cadets');
+const sdsEl   = document.getElementById('num_sds');
+const swsEl   = document.getElementById('num_sws');
+const errBox  = document.getElementById('cadetError');
+const errMsg  = document.getElementById('cadetErrorMsg');
+const summary = document.getElementById('cadetSummary');
+const sumText = document.getElementById('cadetSummaryText');
+
+function getInt(el) { return parseInt(el.value) || 0; }
+
+function validateCadets() {
+    const total = getInt(totalEl);
+    const sds   = getInt(sdsEl);
+    const sws   = getInt(swsEl);
+    const used  = sds + sws;
+
+    errBox.classList.add('d-none');
+    summary.classList.add('d-none');
+
+    if (total === 0 && used === 0) return true;
+
+    if (used > total) {
+        errMsg.textContent = `SDs (${sds}) + SWs (${sws}) = ${used} exceeds Total Cadets (${total}). Please reduce.`;
+        errBox.classList.remove('d-none');
+        return false;
+    }
+
+    sumText.textContent =
+        `Total: ${total}  |  SDs: ${sds}  |  SWs: ${sws}  |  Unassigned: ${total - used}`;
+    summary.classList.remove('d-none');
+    return true;
+}
+
+// ── Dynamic name field generator ──────────────────────────────────
+function generateFields(containerId, sectionId, count, prefix, label, colorClass) {
+    const container = document.getElementById(containerId);
+    const section   = document.getElementById(sectionId);
+    container.innerHTML = '';
+
+    if (count <= 0) {
+        section.classList.add('d-none');
+        return;
+    }
+
+    section.classList.remove('d-none');
+
+    for (let i = 1; i <= count; i++) {
+        const col = document.createElement('div');
+        col.className = 'col-md-4';
+        col.innerHTML = `
+            <label class="form-label small fw-semibold" style="color:${colorClass}">
+                ${label} ${i}
+            </label>
+            <input type="text"
+                   class="form-control form-control-sm"
+                   name="${prefix}_name_${i}"
+                   placeholder="Enter name..."
+                   required>
+            <div class="invalid-feedback">This field is required.</div>`;
+        container.appendChild(col);
+    }
+}
+
+function refreshFields() {
+    generateFields('sdsFields', 'sdsSection', getInt(sdsEl), 'sds', 'SD', '#1565c0');
+    generateFields('swsFields', 'swsSection', getInt(swsEl), 'sws', 'SW', '#6a1b9a');
+}
+
+// Auto-suggest equal split when Total Cadets is entered for the first time
+totalEl.addEventListener('change', function () {
+    const total = getInt(totalEl);
+    if (total > 0 && getInt(sdsEl) === 0 && getInt(swsEl) === 0) {
+        const half = Math.floor(total / 2);
+        sdsEl.value = half;
+        swsEl.value = total - half;
+        refreshFields();
+    }
+    validateCadets();
+});
+
+sdsEl.addEventListener('input', () => { validateCadets(); refreshFields(); });
+swsEl.addEventListener('input', () => { validateCadets(); refreshFields(); });
+totalEl.addEventListener('input', validateCadets);
+
+// ── Form submit validation ─────────────────────────────────────────
+document.getElementById('campForm').addEventListener('submit', function (e) {
+    this.classList.add('was-validated');
+
+    if (!this.checkValidity()) {
+        e.preventDefault();
+        // Scroll to first invalid field
+        const first = this.querySelector(':invalid');
+        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+
+    if (!validateCadets()) {
+        e.preventDefault();
+    }
+});
+
+// ── Image preview ──────────────────────────────────────────────────
+document.getElementById('photos').addEventListener('change', function () {
+    const preview = document.getElementById('photoPreview');
+    preview.innerHTML = '';
+    Array.from(this.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.cssText = 'width:72px;height:54px;object-fit:cover;border-radius:5px;border:2px solid #ccc;';
+            preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    });
+});
+</script>
+
+{% endblock %}

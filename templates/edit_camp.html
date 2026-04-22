@@ -1,0 +1,253 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('camps_list') }}">Camps</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('view_camp', camp_id=camp.id) }}">{{ camp.camp_name }}</a></li>
+        <li class="breadcrumb-item active">Edit</li>
+    </ol>
+</nav>
+
+<div class="card border-0 shadow-sm mx-auto" style="max-width:960px;">
+
+    <!-- Orange Header -->
+    <div class="card-header text-white fw-semibold fs-5 d-flex align-items-center gap-2"
+         style="background-color:#ef6c00; border-radius:6px 6px 0 0;">
+        <i class="bi bi-pencil-square fs-5"></i> Edit Camp: {{ camp.camp_name }}
+    </div>
+
+    <div class="card-body p-4">
+        <form method="POST" enctype="multipart/form-data" id="campForm" novalidate>
+
+            <!-- ── Basic Details ──────────────────────────────── -->
+            <p class="fw-semibold text-muted mb-1" style="font-size:0.95rem;">Basic Details</p>
+            <hr class="mt-0 mb-3">
+            <div class="row g-3 mb-2">
+                <div class="col-md-4">
+                    <label for="camp_name" class="form-label">Camp Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="camp_name" name="name"
+                           value="{{ camp.camp_name }}" placeholder="E.g., Annual Training Camp" required>
+                    <div class="invalid-feedback">Camp name is required.</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date"
+                           value="{{ camp.start_date or '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date"
+                           value="{{ camp.end_date or '' }}">
+                </div>
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-8">
+                    <label for="location" class="form-label">Location <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="location" name="location"
+                           value="{{ camp.location or '' }}" placeholder="Enter camp location" required>
+                    <div class="invalid-feedback">Location is required.</div>
+                </div>
+            </div>
+
+            <!-- ── Cadet Details ──────────────────────────────── -->
+            <p class="fw-semibold text-muted mb-1" style="font-size:0.95rem;">Cadet Details</p>
+            <hr class="mt-0 mb-3">
+            <div class="row g-3 mb-2">
+                <div class="col-md-4">
+                    <label for="total_cadets" class="form-label">Total Cadets</label>
+                    <input type="number" class="form-control" id="total_cadets" name="total_cadets"
+                           min="0" value="{{ camp.total_cadets or 0 }}" autocomplete="off">
+                </div>
+                <div class="col-md-4">
+                    <label for="num_sds" class="form-label">Number of SDs</label>
+                    <input type="number" class="form-control" id="num_sds" name="num_sds"
+                           min="0" value="{{ camp.num_sds or 0 }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="num_sws" class="form-label">Number of SWs</label>
+                    <input type="number" class="form-control" id="num_sws" name="num_sws"
+                           min="0" value="{{ camp.num_sws or 0 }}">
+                </div>
+            </div>
+
+            <div id="cadetError" class="alert alert-danger py-2 px-3 mt-2 d-none" style="font-size:0.85rem;">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                <span id="cadetErrorMsg"></span>
+            </div>
+            <div id="cadetSummary" class="alert alert-info py-2 px-3 mt-2 d-none" style="font-size:0.84rem;">
+                <i class="bi bi-people-fill me-1"></i>
+                <span id="cadetSummaryText"></span>
+            </div>
+
+            <!-- ── SDs Name Fields ────── -->
+            <div id="sdsSection" class="d-none mt-4">
+                <p class="fw-semibold mb-1" style="font-size:0.9rem; color:#1565c0;">
+                    <i class="bi bi-person-badge me-1"></i> SD Names
+                </p>
+                <hr class="mt-0 mb-3">
+                <div id="sdsFields" class="row g-2"></div>
+            </div>
+
+            <!-- ── SWs Name Fields ────── -->
+            <div id="swsSection" class="d-none mt-4">
+                <p class="fw-semibold mb-1" style="font-size:0.9rem; color:#6a1b9a;">
+                    <i class="bi bi-person-dress me-1"></i> SW Names
+                </p>
+                <hr class="mt-0 mb-3">
+                <div id="swsFields" class="row g-2"></div>
+            </div>
+
+            <div class="mb-4"></div>
+
+            <!-- ── Other Details ──────────────────────────────── -->
+            <p class="fw-semibold text-muted mb-1" style="font-size:0.95rem;">Other Details</p>
+            <hr class="mt-0 mb-3">
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description"
+                          rows="3">{{ camp.description or '' }}</textarea>
+            </div>
+
+            <!-- ── Manage Existing Photos ──────────────────────── -->
+            {% if photos %}
+            <p class="fw-semibold text-muted mb-1 mt-4" style="font-size:0.95rem;">Existing Photos</p>
+            <hr class="mt-0 mb-3">
+            <div class="row row-cols-2 row-cols-md-5 g-3 mb-4">
+                {% for photo in photos %}
+                <div class="col text-center">
+                    <div class="position-relative">
+                        <img src="{{ photo.photo_url }}" class="img-thumbnail" 
+                             style="height:100px; width:100%; object-fit:cover;">
+                        <button type="button" 
+                                class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1"
+                                style="padding: 2px 6px;"
+                                onclick="deletePhoto('{{ photo.id }}')">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="mb-4">
+                <label for="photos" class="form-label">Upload More Photos</label>
+                <input type="file" class="form-control" id="photos" name="photos"
+                       multiple accept="image/*">
+                <div id="photoPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+            </div>
+
+            <!-- ── Action Buttons ─────────────────────────────── -->
+            <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                <a href="{{ url_for('view_camp', camp_id=camp.id) }}" class="btn btn-secondary px-4">Cancel</a>
+                <button type="submit" class="btn px-4 text-white fw-semibold"
+                        style="background-color:#ef6c00;">
+                    <i class="bi bi-floppy me-1"></i> Save Changes
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- Hidden form for deleting photos -->
+<form id="deletePhotoForm" method="POST" action=""></form>
+
+<script>
+// Pre-fill existing names from database
+const initialSds = {{ camp.sds_names | from_json | tojson }};
+const initialSws = {{ camp.sws_names | from_json | tojson }};
+
+function deletePhoto(photoId) {
+    if (confirm('Delete this photo permanently?')) {
+        const form = document.getElementById('deletePhotoForm');
+        form.action = `/camps/photo/${photoId}/delete`;
+        form.submit();
+    }
+}
+
+// Reuse logic from new_camp.html
+const totalEl = document.getElementById('total_cadets');
+const sdsEl   = document.getElementById('num_sds');
+const swsEl   = document.getElementById('num_sws');
+const errBox  = document.getElementById('cadetError');
+const errMsg  = document.getElementById('cadetErrorMsg');
+const summary = document.getElementById('cadetSummary');
+const sumText = document.getElementById('cadetSummaryText');
+
+function getInt(el) { return parseInt(el.value) || 0; }
+
+function validateCadets() {
+    const total = getInt(totalEl);
+    const sds   = getInt(sdsEl);
+    const sws   = getInt(swsEl);
+    const used  = sds + sws;
+    errBox.classList.add('d-none');
+    summary.classList.add('d-none');
+    if (total === 0 && used === 0) return true;
+    if (used > total) {
+        errMsg.textContent = `SDs (${sds}) + SWs (${sws}) = ${used} exceeds Total Cadets (${total}).`;
+        errBox.classList.remove('d-none');
+        return false;
+    }
+    sumText.textContent = `Total: ${total} | SDs: ${sds} | SWs: ${sws} | Unassigned: ${total - used}`;
+    summary.classList.remove('d-none');
+    return true;
+}
+
+function generateFields(containerId, sectionId, count, prefix, label, colorClass, initialData) {
+    const container = document.getElementById(containerId);
+    const section   = document.getElementById(sectionId);
+    container.innerHTML = '';
+    if (count <= 0) { section.classList.add('d-none'); return; }
+    section.classList.remove('d-none');
+    for (let i = 1; i <= count; i++) {
+        const val = (initialData && initialData[i-1]) ? initialData[i-1] : '';
+        const col = document.createElement('div');
+        col.className = 'col-md-4';
+        col.innerHTML = `
+            <label class="form-label small fw-semibold" style="color:${colorClass}">${label} ${i}</label>
+            <input type="text" class="form-control form-control-sm" name="${prefix}_name_${i}" value="${val}" required>
+            <div class="invalid-feedback">Required.</div>`;
+        container.appendChild(col);
+    }
+}
+
+function refreshFields(useInitial = false) {
+    generateFields('sdsFields', 'sdsSection', getInt(sdsEl), 'sds', 'SD', '#1565c0', useInitial ? initialSds : null);
+    generateFields('swsFields', 'swsSection', getInt(swsEl), 'sws', 'SW', '#6a1b9a', useInitial ? initialSws : null);
+}
+
+// Initial load
+window.onload = () => {
+    validateCadets();
+    refreshFields(true); 
+};
+
+sdsEl.addEventListener('input', () => { validateCadets(); refreshFields(); });
+swsEl.addEventListener('input', () => { validateCadets(); refreshFields(); });
+totalEl.addEventListener('input', validateCadets);
+
+document.getElementById('campForm').addEventListener('submit', function (e) {
+    this.classList.add('was-validated');
+    if (!this.checkValidity() || !validateCadets()) { e.preventDefault(); }
+});
+
+document.getElementById('photos').addEventListener('change', function () {
+    const preview = document.getElementById('photoPreview');
+    preview.innerHTML = '';
+    Array.from(this.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.cssText = 'width:72px;height:54px;object-fit:cover;border-radius:5px;border:2px solid #ccc;';
+            preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    });
+});
+</script>
+{% endblock %}

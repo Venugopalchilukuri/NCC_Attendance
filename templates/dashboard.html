@@ -9,8 +9,8 @@
         <a href="{{ url_for('mark_attendance') }}" class="btn btn-sm btn-outline-success me-2">
             <i class="bi bi-calendar-check text-success me-1 d-none"></i> Mark Attendance
         </a>
-        <a href="{{ url_for('export_csv') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-download"></i> Export Today's CSV
+        <a href="{{ url_for('export_csv') }}" class="btn btn-sm btn-success" title="Export complete attendance history as CSV">
+            <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Download Full CSV
         </a>
     </div>
 </div>
@@ -61,13 +61,30 @@
 </div>
 
 <div class="row">
-    <div class="col-md-8">
-        <div class="card shadow-sm">
+    <div class="col-md-8 mb-4">
+        <div class="card shadow-sm h-100">
             <div class="card-header bg-white">
                 <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Recent Attendance Trend</h5>
             </div>
             <div class="card-body">
-                <canvas id="attendanceChart" height="100"></canvas>
+                <canvas id="attendanceChart" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-chat-heart me-2 text-danger"></i>Student Feedback</h5>
+                <span class="badge bg-danger rounded-pill" id="feedbackCount">0</span>
+            </div>
+            <div class="card-body p-0">
+                <div id="feedbackList" style="max-height: 400px; overflow-y: auto;" class="list-group list-group-flush">
+                    <div class="text-center py-5 text-muted small">
+                        <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
+                        <br>Loading feedback...
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -103,6 +120,47 @@
                             }
                         }
                     }
+                });
+            });
+
+        // ── Fetch and display Feedback ──────────────────────────────────
+        fetch("{{ url_for('get_feedback') }}")
+            .then(response => response.json())
+            .then(data => {
+                const list = document.getElementById('feedbackList');
+                const count = document.getElementById('feedbackCount');
+                list.innerHTML = '';
+                count.textContent = data.length;
+
+                if (data.length === 0) {
+                    list.innerHTML = '<div class="text-center py-5 text-muted small">No feedback received yet.</div>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const date = new Date(item.created_at).toLocaleString();
+                    let stars = '';
+                    if (item.rating) {
+                        for (let i = 1; i <= 5; i++) {
+                            stars += `<i class="bi bi-star${i <= item.rating ? '-fill text-warning' : ''} small"></i>`;
+                        }
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = 'list-group-item p-3 border-0 border-bottom';
+                    card.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div>${stars}</div>
+                            <small class="text-muted" style="font-size:0.7rem;">${date}</small>
+                        </div>
+                        <p class="mb-2 small text-dark">${item.message}</p>
+                        <form method="POST" action="/api/feedback/${item.id}/delete" onsubmit="return confirm('Delete this feedback?')">
+                            <button type="submit" class="btn btn-link p-0 text-danger small text-decoration-none" style="font-size:0.75rem;">
+                                <i class="bi bi-trash me-1"></i>Delete
+                            </button>
+                        </form>
+                    `;
+                    list.appendChild(card);
                 });
             });
     });

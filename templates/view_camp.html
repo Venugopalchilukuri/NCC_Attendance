@@ -1,0 +1,166 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('camps_list') }}">Camps</a></li>
+        <li class="breadcrumb-item active">{{ camp.camp_name }}</li>
+    </ol>
+</nav>
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <h2 class="h3 fw-bold mb-0">
+        <i class="bi bi-tent text-primary me-2"></i>{{ camp.camp_name }}
+    </h2>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('camps_list') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+        <a href="{{ url_for('edit_camp', camp_id=camp.id) }}" class="btn btn-outline-warning btn-sm">
+            <i class="bi bi-pencil-square me-1"></i> Edit Camp
+        </a>
+        <form method="POST" action="{{ url_for('delete_camp', camp_id=camp.id) }}"
+              onsubmit="return confirm('Delete this camp and all its photos?')">
+            <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-trash me-1"></i> Delete Camp
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Camp Info Row -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            {% if camp.location %}
+            <div class="col-md-3">
+                <span class="text-muted small d-block">Location</span>
+                <strong><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ camp.location }}</strong>
+            </div>
+            {% endif %}
+            {% if camp.start_date %}
+            <div class="col-md-3">
+                <span class="text-muted small d-block">Dates</span>
+                <strong><i class="bi bi-calendar-range text-primary me-1"></i>
+                {{ camp.start_date }}{% if camp.end_date %} → {{ camp.end_date }}{% endif %}</strong>
+            </div>
+            {% endif %}
+            {% if camp.total_cadets %}
+            <div class="col-md-2">
+                <span class="text-muted small d-block">Total Cadets</span>
+                <strong>{{ camp.total_cadets }}</strong>
+            </div>
+            {% endif %}
+            {% if camp.num_sds is not none %}
+            <div class="col-md-2">
+                <span class="text-muted small d-block">SDs</span>
+                <strong>{{ camp.num_sds }}</strong>
+            </div>
+            {% endif %}
+            {% if camp.num_sws is not none %}
+            <div class="col-md-2">
+                <span class="text-muted small d-block">SWs</span>
+                <strong>{{ camp.num_sws }}</strong>
+            </div>
+            {% endif %}
+            {% if camp.description %}
+            <div class="col-12">
+                <span class="text-muted small d-block">Description</span>
+                <span>{{ camp.description }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- SD & SW Names -->
+{% set sds_names = camp.sds_names | default('[]') %}
+{% set sws_names = camp.sws_names | default('[]') %}
+
+{% if sds_names and sds_names != '[]' %}
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header fw-semibold" style="background:#e3f2fd; color:#1565c0;">
+        <i class="bi bi-person-badge me-2"></i> SD Names
+        <span class="badge bg-primary ms-2">{{ camp.num_sds }}</span>
+    </div>
+    <div class="card-body">
+        <div class="row g-2">
+            {% for name in sds_names | from_json %}
+            <div class="col-md-3 col-sm-4 col-6">
+                <div class="border rounded px-3 py-2 text-center bg-light">
+                    <span class="badge bg-primary me-1" style="font-size:0.65rem;">SD {{ loop.index }}</span>
+                    <span class="fw-semibold small">{{ name }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if sws_names and sws_names != '[]' %}
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header fw-semibold" style="background:#f3e5f5; color:#6a1b9a;">
+        <i class="bi bi-person-dress me-2"></i> SW Names
+        <span class="badge ms-2" style="background:#6a1b9a;">{{ camp.num_sws }}</span>
+    </div>
+    <div class="card-body">
+        <div class="row g-2">
+            {% for name in sws_names | from_json %}
+            <div class="col-md-3 col-sm-4 col-6">
+                <div class="border rounded px-3 py-2 text-center bg-light">
+                    <span class="badge me-1" style="background:#6a1b9a; font-size:0.65rem;">SW {{ loop.index }}</span>
+                    <span class="fw-semibold small">{{ name }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Photo Gallery -->
+<h5 class="mb-3">
+    <i class="bi bi-images me-2"></i>Photos
+    <span class="badge bg-secondary ms-1">{{ photos | length }}</span>
+</h5>
+
+{% if photos %}
+<div class="row row-cols-2 row-cols-md-4 g-3">
+    {% for photo in photos %}
+    <div class="col">
+        <img src="{{ photo.photo_url }}" class="img-fluid rounded shadow-sm gallery-img"
+             style="height:160px; width:100%; object-fit:cover; cursor:pointer;"
+             alt="Camp photo" data-bs-toggle="modal" data-bs-target="#photoModal"
+             data-src="{{ photo.photo_url }}">
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">No photos uploaded for this camp.</p>
+{% endif %}
+
+<!-- Lightbox Modal -->
+<div class="modal fade" id="photoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark border-0">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-2">
+                <img id="modalImage" src="" class="img-fluid rounded" style="max-height:75vh;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.gallery-img').forEach(img => {
+        img.addEventListener('click', function () {
+            document.getElementById('modalImage').src = this.dataset.src;
+        });
+    });
+</script>
+{% endblock %}

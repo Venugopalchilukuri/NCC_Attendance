@@ -59,8 +59,13 @@
                         <input class="form-control" type="file" id="noc_form" name="noc_form"
                             accept=".pdf,.png,.jpg,.jpeg">
                         {% if student.noc_form %}
-                        <div class="form-text text-success"><i class="bi bi-check-circle"></i> A file is already
-                            uploaded. Uploading a new one will replace it.</div>
+                        <div class="mt-2">
+                            <a href="{{ student.noc_form }}" target="_blank" class="btn btn-sm btn-info text-white">
+                                <i class="bi bi-file-earmark-arrow-down me-1"></i> View Current NOC
+                            </a>
+                            <div class="form-text text-success"><i class="bi bi-check-circle"></i> A file is already
+                                uploaded. Uploading a new one will replace it.</div>
+                        </div>
                         {% else %}
                         <div class="form-text text-warning"><i class="bi bi-info-circle"></i> No NOC file currently
                             uploaded.</div>

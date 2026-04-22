@@ -74,6 +74,20 @@
                 <a href="{{ url_for('reports') }}" class="{% if request.endpoint == 'reports' %}active{% endif %}">
                     <i class="bi bi-graph-up me-2"></i> Reports
                 </a>
+                <!-- Camps Section -->
+                <div style="padding: 8px 20px 4px; font-size:0.75em; color:#888; text-transform:uppercase; letter-spacing:1px; margin-top:8px;">Camps</div>
+                <a href="{{ url_for('camps_list') }}" class="{% if request.endpoint in ['camps_list', 'view_camp'] %}active{% endif %}" style="padding-left:28px;">
+                    <i class="bi bi-tent me-2"></i> View Camps
+                </a>
+                <a href="{{ url_for('new_camp') }}" class="{% if request.endpoint == 'new_camp' %}active{% endif %}" style="padding-left:28px;">
+                    <i class="bi bi-plus-circle me-2"></i> New Camp
+                </a>
+                
+                <!-- Feedback Section (Public) -->
+                <div style="padding: 8px 20px 4px; font-size:0.75em; color:#888; text-transform:uppercase; letter-spacing:1px; margin-top:8px;">Public</div>
+                <a href="{{ url_for('student_feedback') }}" target="_blank">
+                    <i class="bi bi-chat-heart me-2 text-danger"></i> Student Feedback
+                </a>
             </div>
             
             <!-- Main Content -->
