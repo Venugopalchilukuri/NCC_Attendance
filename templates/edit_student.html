@@ -52,6 +52,16 @@
                             <input type="text" class="form-control" id="mobile" name="mobile"
                                 value="{{ student.mobile }}" required>
                         </div>
+                        <div class="col-md-6 mt-3 mt-md-0">
+                            <label for="blood_group" class="form-label fw-bold">Blood Group</label>
+                            <select class="form-select" id="blood_group" name="blood_group">
+                                <option value="">-- Select Blood Group --</option>
+                                {% for bg in ['A+','A-','B+','B-','AB+','AB-','O+','O-'] %}
+                                <option value="{{ bg }}" {% if student.blood_group == bg %}selected{% endif %}>{{ bg }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Optional — leave blank if unknown.</div>
+                        </div>
                     </div>
 
                     <div class="mb-4">

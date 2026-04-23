@@ -31,6 +31,7 @@
                         <th scope="col">Parent's Name</th>
                         <th scope="col">Parent's Mobile</th>
                         <th scope="col">Mobile</th>
+                        <th scope="col">Blood Group</th>
                         <th scope="col">Attendance %</th>
                         <th scope="col">NOC Form</th>
                         <th scope="col" class="text-center">Actions</th>
@@ -39,11 +40,18 @@
                 <tbody>
                     {% for student in students %}
                     <tr>
-                        <td class="align-middle fw-bold">{{ student.reg_id }}</td>
+                        <td class="align-middle">{{ student.reg_id }}</td>
                         <td class="align-middle">{{ student.name }}</td>
                         <td class="align-middle">{{ student.parent_name }}</td>
                         <td class="align-middle">{{ student.parent_mobile if student.parent_mobile else 'N/A' }}</td>
                         <td class="align-middle">{{ student.mobile }}</td>
+                        <td class="align-middle">
+                            {% if student.blood_group %}
+                            <span class="badge rounded-pill" style="background:#c62828; font-size:0.85rem;">{{ student.blood_group }}</span>
+                            {% else %}
+                            <span class="text-muted small">N/A</span>
+                            {% endif %}
+                        </td>
                         <td class="align-middle">
                             <span
                                 class="badge {% if student.attendance_percentage < 75 %}bg-danger{% else %}bg-success{% endif %}">

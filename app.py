@@ -183,6 +183,7 @@ def add_student():
         mobile = request.form.get('mobile')
         parent_mobile = request.form.get('parent_mobile')
         noc_form = request.files.get('noc_form')
+        blood_group = request.form.get('blood_group', '').strip()
         
         # Check duplicate reg_id
         check = supabase.table("students").select("id").eq("reg_id", reg_id).execute()
@@ -204,7 +205,8 @@ def add_student():
             "parent_name": parent_name,
             "mobile": mobile,
             "parent_mobile": parent_mobile,
-            "noc_form": file_path
+            "noc_form": file_path,
+            "blood_group": blood_group
         }
         supabase.table("students").insert(student_doc).execute()
         flash('Student added successfully!', 'success')
@@ -229,6 +231,7 @@ def edit_student(student_id):
         mobile = request.form.get('mobile')
         parent_mobile = request.form.get('parent_mobile')
         noc_form = request.files.get('noc_form')
+        blood_group = request.form.get('blood_group', '').strip()
         
         # Check duplicate reg_id (if changed)
         if reg_id != student.get('reg_id'):
@@ -242,7 +245,8 @@ def edit_student(student_id):
             "reg_id": reg_id,
             "parent_name": parent_name,
             "mobile": mobile,
-            "parent_mobile": parent_mobile
+            "parent_mobile": parent_mobile,
+            "blood_group": blood_group
         }
         
         if noc_form and noc_form.filename != '':
