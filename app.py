@@ -44,15 +44,15 @@ init_db()
 # Supabase Storage bucket name for NOC forms
 NOC_BUCKET = "noc-forms"
 
-def upload_to_supabase_storage(file, filename):
+def upload_to_supabase_storage(file, filename, bucket_name=NOC_BUCKET):
     """Upload a file object to Supabase Storage and return its public URL."""
     try:
         file.seek(0)
         file_bytes = file.read()
-        print(f"DEBUG: Uploading NOC to {NOC_BUCKET} as {filename}")
+        print(f"DEBUG: Uploading file to {bucket_name} as {filename}")
         
         # Simple upload call to capture any specific storage error
-        res = supabase.storage.from_(NOC_BUCKET).upload(
+        res = supabase.storage.from_(bucket_name).upload(
             path=filename,
             file=file_bytes,
             file_options={"content-type": file.content_type, "upsert": "true"}
@@ -60,14 +60,18 @@ def upload_to_supabase_storage(file, filename):
         
         # Check if the response indicates success
         if hasattr(res, 'error') and res.error:
-            print(f"DEBUG: NOC UPLOAD ERROR - {res.error}")
+            err_msg = str(res.error)
+            print(f"DEBUG: STORAGE UPLOAD ERROR - {err_msg}")
+            flash(f"Storage Upload Error: {err_msg}", "danger")
             return ""
 
-        public_url = supabase.storage.from_(NOC_BUCKET).get_public_url(filename)
-        print(f"DEBUG: NOC uploaded successfully. URL: {public_url}")
+        public_url = supabase.storage.from_(bucket_name).get_public_url(filename)
+        print(f"DEBUG: File uploaded successfully. URL: {public_url}")
         return public_url
     except Exception as e:
-        print(f"DEBUG: NOC EXCEPTION during upload for {filename}: {e}")
+        err_msg = str(e)
+        print(f"DEBUG: STORAGE EXCEPTION during upload for {filename}: {err_msg}")
+        flash(f"Storage Upload Error: {err_msg}", "danger")
         return ""
 
 # Login decorator
@@ -780,6 +784,120 @@ def delete_feedback(fid):
     except Exception as e:
         flash(f'Error: {str(e)}', 'danger')
     return redirect(url_for('dashboard'))
+
+
+# ── Resources Routes ───────────────────────────────────────────────
+
+@app.route('/resources')
+@login_required
+def view_resources():
+    resources = supabase.table("resources").select("*").order("uploaded_at", desc=True).execute().data
+    for resource in resources:
+        if 'uploaded_at' in resource and resource['uploaded_at']:
+            resource['uploaded_at'] = resource['uploaded_at'].split('T')[0]
+    
+    subjects = list(set([r['subject'] for r in resources if r.get('subject')]))
+    
+    return render_template('resources.html', resources=resources, subjects=subjects)
+
+
+@app.route('/resources/upload', methods=['GET', 'POST'])
+@login_required
+def upload_resource():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        subject = request.form.get('subject')
+        description = request.form.get('description', '')
+        year_semester = request.form.get('year_semester', '')
+        file = request.files.get('file')
+        
+        if not file or file.filename == '':
+            flash('Please select a file to upload.', 'danger')
+            return redirect(url_for('upload_resource'))
+        
+        allowed_extensions = {'pdf', 'docx', 'ppt', 'png', 'jpg', 'jpeg'}
+        file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+        if file_ext not in allowed_extensions:
+            flash('Invalid file type. Allowed types: PDF, DOCX, PPT, PNG, JPG.', 'danger')
+            return redirect(url_for('upload_resource'))
+        
+        filename = f"{datetime.now().timestamp()}_{secure_filename(file.filename)}"
+        file_url = upload_to_supabase_storage(file, filename, bucket_name='resources')
+        
+        if not file_url:
+            flash('Error uploading file to storage.', 'danger')
+            return redirect(url_for('upload_resource'))
+        
+        resource_doc = {
+            "title": title,
+            "subject": subject,
+            "description": description,
+            "year_semester": year_semester,
+            "filename": filename,
+            "file_url": file_url,
+            "file_type": file_ext.upper()
+        }
+        
+        try:
+            supabase.table("resources").insert(resource_doc).execute()
+            flash('Resource uploaded successfully!', 'success')
+        except Exception as e:
+            flash(f'Error saving resource: {str(e)}', 'danger')
+            
+        return redirect(url_for('view_resources'))
+        
+    return render_template('upload_resource.html')
+
+
+@app.route('/resources/delete/<resource_id>', methods=['POST'])
+@login_required
+def delete_resource(resource_id):
+    try:
+        supabase.table("resources").delete().eq("id", resource_id).execute()
+        flash('Resource deleted successfully.', 'success')
+    except Exception as e:
+        flash(f'Error deleting resource: {str(e)}', 'danger')
+    return redirect(url_for('view_resources'))
+
+
+@app.route('/api/resources', methods=['GET'])
+@login_required
+def api_get_resources():
+    resources = supabase.table("resources").select("*").order("uploaded_at", desc=True).execute().data
+    return jsonify(resources)
+
+
+@app.route('/api/resources', methods=['POST'])
+@login_required
+def api_upload_resource():
+    data = request.form
+    file = request.files.get('file')
+    
+    filename = f"{datetime.now().timestamp()}_{secure_filename(file.filename)}"
+    file_url = upload_to_supabase_storage(file, filename, bucket_name='resources')
+    
+    resource_doc = {
+        "title": data.get('title'),
+        "subject": data.get('subject'),
+        "description": data.get('description', ''),
+        "year_semester": data.get('year_semester', ''),
+        "filename": filename,
+        "file_url": file_url,
+        "file_type": file.filename.rsplit('.', 1)[1].upper() if '.' in file.filename else ''
+    }
+    
+    supabase.table("resources").insert(resource_doc).execute()
+    return jsonify({"success": True, "resource": resource_doc})
+
+
+@app.route('/api/resources/<resource_id>', methods=['DELETE'])
+@login_required
+def api_delete_resource(resource_id):
+    try:
+        supabase.table("resources").delete().eq("id", resource_id).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 if __name__ == '__main__':
