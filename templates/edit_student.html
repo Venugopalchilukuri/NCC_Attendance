@@ -64,6 +64,19 @@
                         </div>
                     </div>
 
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="academic_year" class="form-label fw-bold">Academic Year</label>
+                            <select class="form-select" id="academic_year" name="academic_year">
+                                <option value="">-- Unassigned --</option>
+                                {% for yr in ['1st Year', '2nd Year', '3rd Year'] %}
+                                <option value="{{ yr }}" {% if student.academicYear == yr %}selected{% endif %}>{{ yr }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Optional — leave blank to keep as Unassigned.</div>
+                        </div>
+                    </div>
+
                     <div class="mb-4">
                         <label for="noc_form" class="form-label fw-bold">Update NOC Form</label>
                         <input class="form-control" type="file" id="noc_form" name="noc_form"

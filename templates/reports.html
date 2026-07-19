@@ -1,7 +1,11 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="h3 mb-0"><i class="bi bi-graph-up text-primary me-2"></i>Attendance Reports</h2>
+    <h2 class="h3 mb-0"><i class="bi bi-graph-up text-primary me-2"></i>Attendance Reports
+        {% if academic_year %}
+        <span class="badge bg-primary fs-6 ms-2">{{ academic_year }}</span>
+        {% endif %}
+    </h2>
     <div class="d-flex gap-2">
         <!-- Always Visible: Full History Download -->
         <a href="{{ url_for('export_csv') }}" class="btn btn-success">
@@ -9,8 +13,8 @@
         </a>
 
         <!-- Visible only when filtering: Filtered Download -->
-        {% if start_date or end_date %}
-        <a href="{{ url_for('export_csv', start_date=start_date, end_date=end_date) }}" class="btn btn-warning">
+        {% if start_date or end_date or academic_year %}
+        <a href="{{ url_for('export_csv', start_date=start_date, end_date=end_date, academic_year=academic_year) }}" class="btn btn-warning">
             <i class="bi bi-funnel me-1"></i> EXPORT FILTERED
         </a>
         {% endif %}
@@ -20,19 +24,28 @@
 <div class="card shadow-sm mb-4 border-0">
     <div class="card-body bg-light rounded">
         <form method="GET" action="{{ url_for('reports') }}" class="row g-3 align-items-end">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label for="start_date" class="form-label fw-bold">Start Date</label>
                 <input type="date" class="form-control shadow-sm" id="start_date" name="start_date"
                     value="{{ start_date or '' }}">
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label for="end_date" class="form-label fw-bold">End Date</label>
                 <input type="date" class="form-control shadow-sm" id="end_date" name="end_date"
                     value="{{ end_date or '' }}">
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
+                <label for="academic_year_filter" class="form-label fw-bold">Academic Year</label>
+                <select class="form-select shadow-sm" id="academic_year_filter" name="academic_year">
+                    <option value="" {% if not academic_year %}selected{% endif %}>All Students</option>
+                    <option value="1st Year" {% if academic_year == '1st Year' %}selected{% endif %}>1st Year</option>
+                    <option value="2nd Year" {% if academic_year == '2nd Year' %}selected{% endif %}>2nd Year</option>
+                    <option value="3rd Year" {% if academic_year == '3rd Year' %}selected{% endif %}>3rd Year</option>
+                </select>
+            </div>
+            <div class="col-md-3">
                 <button type="submit" class="btn btn-primary w-100 shadow-sm"><i class="bi bi-funnel-fill me-1"></i>
-                    Filter Date Range</button>
+                    Apply Filters</button>
             </div>
         </form>
     </div>
@@ -57,6 +70,9 @@
                     <tr>
                         <th scope="col" class="ps-4">Reg ID</th>
                         <th scope="col">Name</th>
+                        {% if not academic_year %}
+                        <th scope="col">Academic Year</th>
+                        {% endif %}
                         <th scope="col" class="text-center">Days Present</th>
                         <th scope="col">Percentage</th>
                         <th scope="col">Status</th>
@@ -67,6 +83,15 @@
                     <tr>
                         <td class="ps-4 fw-bold align-middle">{{ item.student.reg_id }}</td>
                         <td class="align-middle">{{ item.student.name }}</td>
+                        {% if not academic_year %}
+                        <td class="align-middle">
+                            {% if item.student.academicYear %}
+                            <span class="badge bg-secondary">{{ item.student.academicYear }}</span>
+                            {% else %}
+                            <span class="text-muted small">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
                         <td class="text-center align-middle h5 mb-0">
                             <span class="badge bg-secondary">{{ item.present_count }} / {{ total_days }}</span>
                         </td>
@@ -95,7 +120,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="text-center py-4 text-muted">No attendance data found for this range.
+                        <td colspan="{% if academic_year %}5{% else %}6{% endif %}" class="text-center py-4 text-muted">No attendance data found for this range.
                         </td>
                     </tr>
                     {% endfor %}

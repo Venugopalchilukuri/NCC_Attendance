@@ -20,75 +20,179 @@
     </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover table-striped mb-0">
-                <thead class="table-dark">
-                    <tr>
-                        <th scope="col">Reg ID</th>
-                        <th scope="col">Name</th>
-                        <th scope="col">Parent's Name</th>
-                        <th scope="col">Parent's Mobile</th>
-                        <th scope="col">Mobile</th>
-                        <th scope="col">Blood Group</th>
-                        <th scope="col">Attendance %</th>
-                        <th scope="col">NOC Form</th>
-                        <th scope="col" class="text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in students %}
-                    <tr>
-                        <td class="align-middle">{{ student.reg_id }}</td>
-                        <td class="align-middle">{{ student.name }}</td>
-                        <td class="align-middle">{{ student.parent_name }}</td>
-                        <td class="align-middle">{{ student.parent_mobile if student.parent_mobile else 'N/A' }}</td>
-                        <td class="align-middle">{{ student.mobile }}</td>
-                        <td class="align-middle">
-                            {% if student.blood_group %}
-                            <span class="badge rounded-pill" style="background:#c62828; font-size:0.85rem;">{{ student.blood_group }}</span>
-                            {% else %}
-                            <span class="text-muted small">N/A</span>
-                            {% endif %}
-                        </td>
-                        <td class="align-middle">
-                            <span
-                                class="badge {% if student.attendance_percentage < 75 %}bg-danger{% else %}bg-success{% endif %}">
-                                {{ student.attendance_percentage }}%
-                            </span>
-                        </td>
-                        <td class="align-middle">
-                            {% if student.noc_form %}
-                            <a href="{{ student.noc_form }}" target="_blank" class="btn btn-sm btn-outline-info">
-                                <i class="bi bi-file-earmark-arrow-down"></i> View DOC
-                            </a>
-                            {% else %}
-                            <span class="text-muted"><i class="bi bi-x-circle"></i> None</span>
-                            {% endif %}
-                        </td>
-                        <td class="align-middle text-center">
-                            <a href="{{ url_for('edit_student', student_id=student._id) }}"
-                                class="btn btn-sm btn-warning" title="Edit">
-                                <i class="bi bi-pencil-square"></i>
-                            </a>
-                            <form action="{{ url_for('delete_student', student_id=student._id) }}" method="POST"
-                                class="d-inline"
-                                onsubmit="return confirm('Are you sure you want to delete this student and their attendance records?');">
-                                <button type="submit" class="btn btn-sm btn-danger" title="Delete">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">No students found.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+{# ── Group students by academicYear ── #}
+{% set years = ['1st Year', '2nd Year', '3rd Year'] %}
+{% set groups = namespace(items={}) %}
+{% for yr in years %}
+    {% set _ = groups.items.update({yr: []}) %}
+{% endfor %}
+{% set unassigned = namespace(items=[]) %}
+
+{% for student in students %}
+    {% if student.academicYear in years %}
+        {# Jinja can't append to dict lists inline, so we mark each student #}
+    {% endif %}
+{% endfor %}
+
+{# Build group arrays using Jinja loops #}
+{% set yr1 = students | selectattr('academicYear', 'equalto', '1st Year') | list %}
+{% set yr2 = students | selectattr('academicYear', 'equalto', '2nd Year') | list %}
+{% set yr3 = students | selectattr('academicYear', 'equalto', '3rd Year') | list %}
+{% set unassigned_list = students | rejectattr('academicYear', 'in', years) | list %}
+
+{# ── Accordion ── #}
+<div class="accordion" id="studentsAccordion">
+
+    {# Helper macro for the student table inside each group #}
+    {% macro student_table(group_students, group_id) %}
+    <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">Reg ID</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Parent's Name</th>
+                    <th scope="col">Parent's Mobile</th>
+                    <th scope="col">Mobile</th>
+                    <th scope="col">Blood Group</th>
+                    <th scope="col">Attendance %</th>
+                    <th scope="col">NOC Form</th>
+                    <th scope="col" class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in group_students %}
+                <tr>
+                    <td class="align-middle">{{ student.reg_id }}</td>
+                    <td class="align-middle">{{ student.name }}</td>
+                    <td class="align-middle">{{ student.parent_name }}</td>
+                    <td class="align-middle">{{ student.parent_mobile if student.parent_mobile else 'N/A' }}</td>
+                    <td class="align-middle">{{ student.mobile }}</td>
+                    <td class="align-middle">
+                        {% if student.blood_group %}
+                        <span class="badge rounded-pill" style="background:#c62828; font-size:0.85rem;">{{ student.blood_group }}</span>
+                        {% else %}
+                        <span class="text-muted small">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td class="align-middle">
+                        <span class="badge {% if student.attendance_percentage < 75 %}bg-danger{% else %}bg-success{% endif %}">
+                            {{ student.attendance_percentage }}%
+                        </span>
+                    </td>
+                    <td class="align-middle">
+                        {% if student.noc_form %}
+                        <a href="{{ student.noc_form }}" target="_blank" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-file-earmark-arrow-down"></i> View DOC
+                        </a>
+                        {% else %}
+                        <span class="text-muted"><i class="bi bi-x-circle"></i> None</span>
+                        {% endif %}
+                    </td>
+                    <td class="align-middle text-center">
+                        <a href="{{ url_for('edit_student', student_id=student._id) }}"
+                            class="btn btn-sm btn-warning" title="Edit">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
+                        <form action="{{ url_for('delete_student', student_id=student._id) }}" method="POST"
+                            class="d-inline"
+                            onsubmit="return confirm('Are you sure you want to delete this student and their attendance records?');">
+                            <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center py-3 text-muted">No students in this group.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endmacro %}
+
+    {# ── 1st Year ── #}
+    <div class="accordion-item shadow-sm mb-3 border-0 rounded">
+        <h2 class="accordion-header" id="heading1st">
+            <button class="accordion-button {% if yr1|length == 0 %}collapsed{% endif %} rounded fw-semibold" type="button"
+                data-bs-toggle="collapse" data-bs-target="#collapse1st" aria-expanded="{{ 'true' if yr1|length > 0 else 'false' }}"
+                aria-controls="collapse1st">
+                <i class="bi bi-folder2-open me-2 text-primary"></i> 1st Year
+                <span class="badge bg-primary ms-2">{{ yr1|length }}</span>
+            </button>
+        </h2>
+        <div id="collapse1st" class="accordion-collapse collapse {% if yr1|length > 0 %}show{% endif %}"
+            aria-labelledby="heading1st" data-bs-parent="#studentsAccordion">
+            <div class="accordion-body p-0">
+                {{ student_table(yr1, 'yr1') }}
+            </div>
         </div>
     </div>
+
+    {# ── 2nd Year ── #}
+    <div class="accordion-item shadow-sm mb-3 border-0 rounded">
+        <h2 class="accordion-header" id="heading2nd">
+            <button class="accordion-button collapsed rounded fw-semibold" type="button"
+                data-bs-toggle="collapse" data-bs-target="#collapse2nd" aria-expanded="false"
+                aria-controls="collapse2nd">
+                <i class="bi bi-folder2-open me-2 text-success"></i> 2nd Year
+                <span class="badge bg-success ms-2">{{ yr2|length }}</span>
+            </button>
+        </h2>
+        <div id="collapse2nd" class="accordion-collapse collapse"
+            aria-labelledby="heading2nd" data-bs-parent="#studentsAccordion">
+            <div class="accordion-body p-0">
+                {{ student_table(yr2, 'yr2') }}
+            </div>
+        </div>
+    </div>
+
+    {# ── 3rd Year ── #}
+    <div class="accordion-item shadow-sm mb-3 border-0 rounded">
+        <h2 class="accordion-header" id="heading3rd">
+            <button class="accordion-button collapsed rounded fw-semibold" type="button"
+                data-bs-toggle="collapse" data-bs-target="#collapse3rd" aria-expanded="false"
+                aria-controls="collapse3rd">
+                <i class="bi bi-folder2-open me-2 text-warning"></i> 3rd Year
+                <span class="badge bg-warning text-dark ms-2">{{ yr3|length }}</span>
+            </button>
+        </h2>
+        <div id="collapse3rd" class="accordion-collapse collapse"
+            aria-labelledby="heading3rd" data-bs-parent="#studentsAccordion">
+            <div class="accordion-body p-0">
+                {{ student_table(yr3, 'yr3') }}
+            </div>
+        </div>
+    </div>
+
+    {# ── Unassigned ── #}
+    <div class="accordion-item shadow-sm mb-3 border-0 rounded">
+        <h2 class="accordion-header" id="headingUnassigned">
+            <button class="accordion-button {% if yr1|length == 0 and yr2|length == 0 and yr3|length == 0 %}{% else %}collapsed{% endif %} rounded fw-semibold" type="button"
+                data-bs-toggle="collapse" data-bs-target="#collapseUnassigned" aria-expanded="false"
+                aria-controls="collapseUnassigned">
+                <i class="bi bi-folder2 me-2 text-secondary"></i> Unassigned
+                <span class="badge bg-secondary ms-2">{{ unassigned_list|length }}</span>
+            </button>
+        </h2>
+        <div id="collapseUnassigned" class="accordion-collapse collapse {% if yr1|length == 0 and yr2|length == 0 and yr3|length == 0 and unassigned_list|length > 0 %}show{% endif %}"
+            aria-labelledby="headingUnassigned" data-bs-parent="#studentsAccordion">
+            <div class="accordion-body p-0">
+                {{ student_table(unassigned_list, 'unassigned') }}
+            </div>
+        </div>
+    </div>
+
 </div>
+
+{% if not students %}
+<div class="card shadow-sm">
+    <div class="card-body text-center py-5 text-muted">
+        <i class="bi bi-people fs-1 d-block mb-3"></i>
+        No students found. <a href="{{ url_for('add_student') }}">Add a student</a>.
+    </div>
+</div>
+{% endif %}
 {% endblock %}

@@ -8,8 +8,28 @@
     <div class="col-md-12">
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-white border-bottom-0 pb-0">
+
+                {# ── Academic Year Filter (GET, auto-submit) ── #}
+                <form method="GET" action="{{ url_for('mark_attendance') }}"
+                    class="d-flex w-auto align-items-center mb-3 mt-2" id="yearFilterForm">
+                    <input type="hidden" name="date" value="{{ date }}">
+                    <label for="academic_year_filter" class="form-label me-3 fw-bold mb-0">Academic Year:</label>
+                    <select class="form-select w-auto me-3 shadow-sm" id="academic_year_filter" name="academic_year"
+                        onchange="this.form.submit()">
+                        <option value="" {% if not academic_year %}selected{% endif %}>All Students</option>
+                        <option value="1st Year" {% if academic_year == '1st Year' %}selected{% endif %}>1st Year</option>
+                        <option value="2nd Year" {% if academic_year == '2nd Year' %}selected{% endif %}>2nd Year</option>
+                        <option value="3rd Year" {% if academic_year == '3rd Year' %}selected{% endif %}>3rd Year</option>
+                    </select>
+                    {% if academic_year %}
+                    <span class="badge bg-primary me-2">{{ students|length }} student(s)</span>
+                    {% endif %}
+                </form>
+
+                {# ── Date Filter (GET, auto-submit) ── #}
                 <form method="GET" action="{{ url_for('mark_attendance') }}"
                     class="d-flex w-auto align-items-center mb-3 mt-2">
+                    <input type="hidden" name="academic_year" value="{{ academic_year }}">
                     <label for="date" class="form-label me-3 fw-bold mb-0">Select Date:</label>
                     <input type="date" class="form-control w-auto me-3 shadow-sm" id="date" name="date"
                         value="{{ date }}" max="{{ date }}" onchange="this.form.submit()">
@@ -19,14 +39,18 @@
             </div>
 
             <div class="card-body">
-                <form method="POST" action="{{ url_for('mark_attendance', date=date) }}">
+                <form method="POST" action="{{ url_for('mark_attendance', date=date, academic_year=academic_year) }}">
                     <input type="hidden" name="date" value="{{ date }}">
+                    <input type="hidden" name="academic_year" value="{{ academic_year }}">
                     <div class="table-responsive bg-white rounded shadow-sm border">
                         <table class="table table-hover mb-0 align-middle">
                             <thead class="table-light">
                                 <tr>
                                     <th scope="col" class="ps-4">Reg ID</th>
                                     <th scope="col">Name</th>
+                                    {% if not academic_year %}
+                                    <th scope="col">Academic Year</th>
+                                    {% endif %}
                                     <th scope="col" class="text-center">Status</th>
                                 </tr>
                             </thead>
@@ -35,6 +59,15 @@
                                 <tr>
                                     <td class="ps-4 fw-bold">{{ student.reg_id }}</td>
                                     <td>{{ student.name }}</td>
+                                    {% if not academic_year %}
+                                    <td>
+                                        {% if student.academicYear %}
+                                        <span class="badge bg-secondary">{{ student.academicYear }}</span>
+                                        {% else %}
+                                        <span class="text-muted small">Unassigned</span>
+                                        {% endif %}
+                                    </td>
+                                    {% endif %}
                                     <td class="text-center">
                                         <div class="btn-group" role="group" aria-label="Attendance Status">
                                             <!-- Present Button -->
@@ -63,9 +96,13 @@
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="3" class="text-center py-5 text-muted">
+                                    <td colspan="4" class="text-center py-5 text-muted">
                                         <i class="bi bi-people fs-1 d-block mb-3"></i>
+                                        {% if academic_year %}
+                                        No students found for <strong>{{ academic_year }}</strong>. Please add students or change the filter.
+                                        {% else %}
                                         No students found. Please add students first.
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -77,6 +114,7 @@
                     <div class="d-flex justify-content-end mt-4">
                         <button type="submit" class="btn btn-primary btn-lg shadow-sm px-5">
                             <i class="bi bi-cloud-arrow-up-fill me-2"></i> Save Attendance for {{ date }}
+                            {% if academic_year %}— {{ academic_year }}{% endif %}
                         </button>
                     </div>
                     {% endif %}

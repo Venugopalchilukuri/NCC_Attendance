@@ -188,6 +188,7 @@ def add_student():
         parent_mobile = request.form.get('parent_mobile')
         noc_form = request.files.get('noc_form')
         blood_group = request.form.get('blood_group', '').strip()
+        academic_year = request.form.get('academic_year', '').strip()
         
         # Check duplicate reg_id
         check = supabase.table("students").select("id").eq("reg_id", reg_id).execute()
@@ -210,7 +211,8 @@ def add_student():
             "mobile": mobile,
             "parent_mobile": parent_mobile,
             "noc_form": file_path,
-            "blood_group": blood_group
+            "blood_group": blood_group,
+            "academicYear": academic_year if academic_year else None
         }
         supabase.table("students").insert(student_doc).execute()
         flash('Student added successfully!', 'success')
@@ -236,6 +238,7 @@ def edit_student(student_id):
         parent_mobile = request.form.get('parent_mobile')
         noc_form = request.files.get('noc_form')
         blood_group = request.form.get('blood_group', '').strip()
+        academic_year = request.form.get('academic_year', '').strip()
         
         # Check duplicate reg_id (if changed)
         if reg_id != student.get('reg_id'):
@@ -250,7 +253,8 @@ def edit_student(student_id):
             "parent_name": parent_name,
             "mobile": mobile,
             "parent_mobile": parent_mobile,
-            "blood_group": blood_group
+            "blood_group": blood_group,
+            "academicYear": academic_year if academic_year else None
         }
         
         if noc_form and noc_form.filename != '':
@@ -282,9 +286,11 @@ def delete_student(student_id):
 @login_required
 def mark_attendance():
     date_str = request.args.get('date') or datetime.today().strftime('%Y-%m-%d')
+    academic_year = request.args.get('academic_year', '')
     
     if request.method == 'POST':
         selected_date = request.form.get('date')
+        posted_academic_year = request.form.get('academic_year', '')
         
         # Iterate over all form fields to find attendance selections
         for key, value in request.form.items():
@@ -303,9 +309,13 @@ def mark_attendance():
                     continue
             
         flash(f'Attendance saved for {selected_date}', 'success')
-        return redirect(url_for('mark_attendance', date=selected_date))
+        return redirect(url_for('mark_attendance', date=selected_date, academic_year=posted_academic_year))
         
     students = supabase.table("students").select("*").execute().data
+    
+    # Filter by academic year if specified (blank = All Students)
+    if academic_year:
+        students = [s for s in students if s.get('academicYear') == academic_year]
     
     # Get current attendance for the selected date to prepopulate form
     existing_attendance = supabase.table("attendance").select("*").eq("date", date_str).execute().data
@@ -316,13 +326,14 @@ def mark_attendance():
         s_id_str = str(s['id'])
         s['current_status'] = attendance_map.get(s_id_str, None)
         
-    return render_template('attendance.html', students=students, date=date_str)
+    return render_template('attendance.html', students=students, date=date_str, academic_year=academic_year)
 
 @app.route('/reports', methods=['GET'])
 @login_required
 def reports():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    academic_year = request.args.get('academic_year', '')
     
     query = supabase.table("attendance").select("date, student_id, status")
     if start_date:
@@ -337,6 +348,11 @@ def reports():
     total_days = len(dates_in_range)
     
     students = supabase.table("students").select("*").execute().data
+    
+    # Filter by academic year if specified
+    if academic_year:
+        students = [s for s in students if s.get('academicYear') == academic_year]
+    
     report_data = []
     
     for s in students:
@@ -354,28 +370,60 @@ def reports():
                            report_data=report_data, 
                            start_date=start_date, 
                            end_date=end_date,
-                           total_days=total_days)
+                           total_days=total_days,
+                           academic_year=academic_year)
 
 @app.route('/api/chart_data')
 @login_required
 def chart_data():
-    # Fetch all attendance in one call
-    all_attendance = fetch_all_records(supabase.table("attendance").select("date, status"))
+    academic_year = request.args.get('academic_year', '').strip()
 
-    # Last 30 unique dates
-    dates = sorted(set(a['date'] for a in all_attendance))[-30:]
+    # ── 1. Determine the student pool ─────────────────────────────────
+    all_students = fetch_all_records(supabase.table("students").select("id, academicYear"))
 
-    # Count presents per date in memory
+    if academic_year:
+        # Filter to only students in the requested year
+        scoped_students = [s for s in all_students if s.get('academicYear') == academic_year]
+    else:
+        scoped_students = all_students
+
+    total_in_scope = len(scoped_students)
+
+    # Return empty response if no students found for selected year
+    if total_in_scope == 0:
+        return jsonify({"labels": [], "data": [], "empty": True})
+
+    scoped_ids = set(s['id'] for s in scoped_students)
+
+    # ── 2. Fetch attendance for scoped students only ───────────────────
+    all_attendance = fetch_all_records(
+        supabase.table("attendance").select("student_id, date, status")
+    )
+
+    # Filter attendance to only records belonging to scoped students
+    scoped_attendance = [a for a in all_attendance if a['student_id'] in scoped_ids]
+
+    # ── 3. Determine last 30 unique dates with any scoped attendance ───
+    dates = sorted(set(a['date'] for a in scoped_attendance))[-30:]
+
+    if not dates:
+        return jsonify({"labels": [], "data": [], "empty": True})
+
+    # ── 4. Compute attendance percentage per date ──────────────────────
     present_per_date = {}
-    for a in all_attendance:
+    for a in scoped_attendance:
         if a['status'] == 'Present':
             present_per_date[a['date']] = present_per_date.get(a['date'], 0) + 1
 
-    present_counts = [present_per_date.get(d, 0) for d in dates]
+    percentages = [
+        round((present_per_date.get(d, 0) / total_in_scope) * 100, 1)
+        for d in dates
+    ]
 
     return jsonify({
         "labels": dates,
-        "data": present_counts
+        "data": percentages,
+        "empty": False
     })
 
 def fetch_all_records(query_builder, page_size=1000):
@@ -401,12 +449,16 @@ def export_csv():
     start_date = request.args.get('start_date')
     end_date   = request.args.get('end_date')
     student_filter = request.args.get('student_name', '').strip().lower()
+    academic_year  = request.args.get('academic_year', '').strip()
 
-    # ── 2. Fetch students and apply name filter ────────────────────────
+    # ── 2. Fetch students and apply name / academic year filters ───────
     students_res = fetch_all_records(supabase.table("students").select("*"))
     if student_filter:
         students_res = [s for s in students_res
                         if student_filter in s.get('name', '').lower()]
+    if academic_year:
+        students_res = [s for s in students_res
+                        if s.get('academicYear') == academic_year]
     
     students_map = {s['id']: s for s in students_res}
     target_student_ids = set(students_map.keys())
